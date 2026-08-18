@@ -1,4 +1,3 @@
-
 const axios = require("axios");
 
 const BASE_URL = "http://localhost:3000";
@@ -24,7 +23,6 @@ const coverageTracker = {
   IMMUTABLE: 0
 };
 
-
 async function test(tag, name, method, path, expectedStatus, payload = null) {
   let actualStatus = 0;
 
@@ -44,12 +42,10 @@ async function test(tag, name, method, path, expectedStatus, payload = null) {
 
   if (pass === "N") failed++;
 
-  // Track coverage
   if (coverageTracker[tag] !== undefined) {
     coverageTracker[tag]++;
   }
 }
-
 
 function makeValidBook(id) {
   return {
@@ -76,7 +72,6 @@ function makeValidUpdate() {
 
 let failed = 0;
 
-
 (async () => {
 
   // T01 - Valid create
@@ -91,37 +86,40 @@ let failed = 0;
   // T04 - Update non-existing
   await test("UPDATE_FAIL", "Update non-existing", "PUT", `${API_BASE}/doesnotexist`, 404, makeValidUpdate());
 
-  // T05 - Missing required field (title)
+  // REQUIRED: Missing title
   const missingTitle = makeValidBook("bMissingTitle");
   delete missingTitle.title;
   await test("REQUIRED", "Missing title", "POST", `${API_BASE}`, 400, missingTitle);
 
- 
-
-  // TYPE validation: year must be number
+  // TYPE: Year must be number
   const badYear = makeValidBook("bBadYear");
   badYear.year = "not-a-number";
   await test("TYPE", "Year not number", "POST", `${API_BASE}`, 400, badYear);
 
-  // LENGTH validation: title too short
+  // LENGTH: Title too short
   const shortTitle = makeValidBook("bShortTitle");
   shortTitle.title = "A";
   await test("LENGTH", "Title too short", "POST", `${API_BASE}`, 400, shortTitle);
 
-  // LENGTH validation: summary too long
+  // LENGTH: Summary too long
   const longSummary = makeValidBook("bLongSummary");
   longSummary.summary = "x".repeat(600);
   await test("LENGTH", "Summary too long", "POST", `${API_BASE}`, 400, longSummary);
 
-  // BOUNDARY: year too early
+  // BOUNDARY: Year too early
   const earlyYear = makeValidBook("bEarlyYear");
   earlyYear.year = 1400;
   await test("BOUNDARY", "Year too early", "POST", `${API_BASE}`, 400, earlyYear);
 
-  // TEMPORAL: year in the future
+  // TEMPORAL: Year in the future
   const futureYear = makeValidBook("bFutureYear");
   futureYear.year = new Date().getFullYear() + 5;
   await test("TEMPORAL", "Year in future", "POST", `${API_BASE}`, 400, futureYear);
+
+  // ENUM: Invalid genre (required by tutor feedback)
+  const badGenre = makeValidBook("bBadGenre");
+  badGenre.genre = "InvalidGenre";
+  await test("TYPE", "Invalid genre", "POST", `${API_BASE}`, 400, badGenre);
 
   // UNKNOWN field on create
   const unknownCreate = makeValidBook("bUnknownCreate");
@@ -133,7 +131,7 @@ let failed = 0;
   unknownUpdate.hackerField = "malicious";
   await test("UNKNOWN_UPDATE", "Unknown field update", "PUT", `${API_BASE}/${uniqueId}`, 400, unknownUpdate);
 
-  // IMMUTABLE: attempt to change id
+  // IMMUTABLE: Attempt to change ID
   const changeId = makeValidUpdate();
   changeId.id = "newId";
   await test("IMMUTABLE", "Attempt id change", "PUT", `${API_BASE}/${uniqueId}`, 400, changeId);
