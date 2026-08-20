@@ -15,12 +15,23 @@ function rejectUnknownFields(payload) {
 
 // GET ALL
 exports.getAllBooks = async () => {
-  return await Book.find({});
+  const books = await Book.find({}).lean();
+
+  return books.map(b => ({
+    ...b,
+    price: parseFloat(b.price.toString())
+  }));
 };
 
 // GET BY ID
 exports.getBookById = async (id) => {
-  return await Book.findOne({ id });
+  const b = await Book.findOne({ id }).lean();
+  if (!b) return null;
+
+  return {
+    ...b,
+    price: parseFloat(b.price.toString())
+  };
 };
 
 // CREATE
@@ -36,7 +47,9 @@ exports.createBook = async (payload) => {
 
   try {
     const created = await Book.create(payload);
-    return created.toObject();
+    const obj = created.toObject();
+    obj.price = parseFloat(obj.price.toString());
+    return obj;
   } catch (err) {
     throw new Error(err.message);
   }
@@ -62,7 +75,9 @@ exports.updateBook = async (id, payload) => {
   try {
     Object.assign(existing, payload);
     const updated = await existing.save();
-    return updated.toObject();
+    const obj = updated.toObject();
+    obj.price = parseFloat(obj.price.toString());
+    return obj;
   } catch (err) {
     throw new Error(err.message);
   }
